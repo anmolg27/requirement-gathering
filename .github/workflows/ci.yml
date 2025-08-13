@@ -56,14 +56,16 @@ jobs:
       working-directory: backend/api-gateway
       run: npx prisma migrate deploy
       env:
-        DATABASE_URL: postgresql://postgres:password@localhost:5432/reqgather_test
+        DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/reqgather_test' }}
 
     - name: Run API Gateway tests
       working-directory: backend/api-gateway
       run: npm test
       env:
-        DATABASE_URL: postgresql://postgres:password@localhost:5432/reqgather_test
-        JWT_SECRET: test-secret-key
+        DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/reqgather_test' }}
+        REDIS_URL: ${{ secrets.REDIS_URL || 'redis://localhost:6379' }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
+        JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'test-refresh-secret' }}
         NODE_ENV: test
 
     - name: Setup Node.js for Frontend

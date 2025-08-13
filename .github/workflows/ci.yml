@@ -1,0 +1,221 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: reqgather_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/api-gateway/package-lock.json
+
+    - name: Install API Gateway dependencies
+      working-directory: backend/api-gateway
+      run: npm ci
+
+    - name: Generate Prisma client
+      working-directory: backend/api-gateway
+      run: npx prisma generate
+
+    - name: Run database migrations
+      working-directory: backend/api-gateway
+      run: npx prisma migrate deploy
+      env:
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/reqgather_test
+
+    - name: Run API Gateway tests
+      working-directory: backend/api-gateway
+      run: npm test
+      env:
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/reqgather_test
+        JWT_SECRET: test-secret-key
+        NODE_ENV: test
+
+    - name: Setup Node.js for Frontend
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Frontend dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Run Frontend tests
+      working-directory: frontend
+      run: npm test -- --coverage --watchAll=false
+
+    - name: Build Frontend
+      working-directory: frontend
+      run: npm run build
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/api-gateway/package-lock.json
+
+    - name: Install API Gateway dependencies
+      working-directory: backend/api-gateway
+      run: npm ci
+
+    - name: Run ESLint
+      working-directory: backend/api-gateway
+      run: npm run lint
+
+    - name: Setup Node.js for Frontend
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Frontend dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Run Frontend linting
+      working-directory: frontend
+      run: npm run lint
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/api-gateway/package-lock.json
+
+    - name: Install API Gateway dependencies
+      working-directory: backend/api-gateway
+      run: npm ci
+
+    - name: Run security audit
+      working-directory: backend/api-gateway
+      run: npm audit --audit-level moderate
+
+    - name: Setup Node.js for Frontend
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Frontend dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Run Frontend security audit
+      working-directory: frontend
+      run: npm audit --audit-level moderate
+
+  build:
+    needs: [test, lint, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push API Gateway image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend/api-gateway
+        file: ./backend/api-gateway/Dockerfile.dev
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/reqgather-api-gateway:latest
+          ${{ secrets.DOCKER_USERNAME }}/reqgather-api-gateway:${{ github.sha }}
+
+    - name: Build and push Frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile.dev
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/reqgather-frontend:latest
+          ${{ secrets.DOCKER_USERNAME }}/reqgather-frontend:${{ github.sha }}
+
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment logic here
+        # This could be deploying to a staging server, Kubernetes cluster, etc.
+
+  deploy-production:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment logic here
+        # This could be deploying to a production server, Kubernetes cluster, etc.

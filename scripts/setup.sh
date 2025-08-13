@@ -1,196 +1,116 @@
 #!/bin/bash
 
-# Requirements Gathering Platform - Setup Script
-# This script sets up the development environment for Sprint 1
-
-set -e
-
-echo "🚀 Setting up Requirements Gathering Platform..."
+echo "Setting up Requirements Gathering App Development Environment"
+echo "================================================================"
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
 # Check if Docker is installed
-check_docker() {
-    if ! command -v docker &> /dev/null; then
-        print_error "Docker is not installed. Please install Docker first."
-        exit 1
-    fi
-
-    if ! command -v docker-compose &> /dev/null; then
-        print_error "Docker Compose is not installed. Please install Docker Compose first."
-        exit 1
-    fi
-
-    print_success "Docker and Docker Compose are installed"
-}
+echo -e "${YELLOW}Checking prerequisites...${NC}"
+if command -v docker &> /dev/null; then
+    echo -e "${GREEN}Docker is installed${NC}"
+else
+    echo -e "${RED}Docker is not installed. Please install Docker first.${NC}"
+    exit 1
+fi
 
 # Check if Node.js is installed
-check_node() {
-    if ! command -v node &> /dev/null; then
-        print_error "Node.js is not installed. Please install Node.js 18+ first."
-        exit 1
-    fi
-
-    NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-    if [ "$NODE_VERSION" -lt 18 ]; then
-        print_error "Node.js version 18+ is required. Current version: $(node -v)"
-        exit 1
-    fi
-
-    print_success "Node.js $(node -v) is installed"
-}
+if command -v node &> /dev/null; then
+    echo -e "${GREEN}Node.js is installed${NC}"
+else
+    echo -e "${RED}Node.js is not installed. Please install Node.js first.${NC}"
+    exit 1
+fi
 
 # Check if Python is installed
-check_python() {
-    if ! command -v python3 &> /dev/null; then
-        print_error "Python 3 is not installed. Please install Python 3.9+ first."
-        exit 1
+if command -v python3 &> /dev/null; then
+    echo -e "${GREEN}Python is installed${NC}"
+elif command -v python &> /dev/null; then
+    echo -e "${GREEN}Python is installed${NC}"
+else
+    echo -e "${YELLOW}Python is not installed. Some features may not work.${NC}"
+fi
+
+echo -e "\n${YELLOW}Setting up environment files...${NC}"
+
+# Create .env files if they don't exist
+env_files=(
+    "backend/api-gateway/.env"
+    "backend/document-processor/.env"
+    "backend/meeting-processor/.env"
+    "backend/ai-service/.env"
+    "frontend/.env"
+)
+
+for env_file in "${env_files[@]}"; do
+    example_file="${env_file%.env}.env.example"
+    if [ -f "$example_file" ]; then
+        if [ ! -f "$env_file" ]; then
+            cp "$example_file" "$env_file"
+            echo -e "${GREEN}Created $env_file${NC}"
+        else
+            echo -e "${BLUE}$env_file already exists${NC}"
+        fi
     fi
+done
 
-    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d'.' -f1)
-    PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d'.' -f2)
+echo -e "\n${YELLOW}Installing dependencies...${NC}"
 
-    if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 9 ]); then
-        print_error "Python 3.9+ is required. Current version: $PYTHON_VERSION"
-        exit 1
-    fi
+# Install root dependencies
+echo -e "${CYAN}Installing root dependencies...${NC}"
+npm install
 
-    print_success "Python $PYTHON_VERSION is installed"
-}
+# Install API Gateway dependencies
+echo -e "${CYAN}Installing API Gateway dependencies...${NC}"
+cd backend/api-gateway
+npm install
+cd ../..
 
-# Create environment files
-setup_env_files() {
-    print_status "Setting up environment files..."
-
-    # API Gateway
-    if [ ! -f "backend/api-gateway/.env" ]; then
-        cp backend/api-gateway/env.example backend/api-gateway/.env
-        print_success "Created backend/api-gateway/.env"
-    else
-        print_warning "backend/api-gateway/.env already exists"
-    fi
-
-    # Frontend
-    if [ ! -f "frontend/.env" ]; then
-        cat > frontend/.env << EOF
-REACT_APP_API_URL=http://localhost:3000
-REACT_APP_WS_URL=ws://localhost:3000
-EOF
-        print_success "Created frontend/.env"
-    else
-        print_warning "frontend/.env already exists"
-    fi
-
-    print_warning "Please update the environment files with your actual configuration values"
-}
-
-# Install dependencies
-install_dependencies() {
-    print_status "Installing dependencies..."
-
-    # API Gateway
-    print_status "Installing API Gateway dependencies..."
-    cd backend/api-gateway
-    npm install
-    cd ../../
-
-    # Frontend
-    print_status "Installing Frontend dependencies..."
+# Install Frontend dependencies (if directory exists)
+if [ -d "frontend" ]; then
+    echo -e "${CYAN}Installing Frontend dependencies...${NC}"
     cd frontend
     npm install
-    cd ../
+    cd ..
+fi
 
-    print_success "Dependencies installed successfully"
-}
+echo -e "\n${YELLOW}Starting Docker containers...${NC}"
 
-# Setup database
-setup_database() {
-    print_status "Setting up database..."
+# Start Docker containers
+echo -e "${CYAN}Starting PostgreSQL and Redis...${NC}"
+docker-compose -f docker-compose.dev.yml up -d postgres redis
 
-    # Start databases
-    docker-compose -f docker-compose.dev.yml up -d postgres redis
+# Wait for containers to be ready
+echo -e "${CYAN}Waiting for containers to be ready...${NC}"
+sleep 10
 
-    # Wait for database to be ready
-    print_status "Waiting for database to be ready..."
-    sleep 10
+echo -e "\n${YELLOW}Setting up database...${NC}"
 
-    # Run database migrations
-    print_status "Running database migrations..."
-    cd backend/api-gateway
-    npx prisma migrate dev --name init
-    npx prisma generate
-    cd ../../
+# Generate Prisma client and run migrations
+cd backend/api-gateway
+echo -e "${CYAN}Generating Prisma client...${NC}"
+npx prisma generate
 
-    print_success "Database setup completed"
-}
+echo -e "${CYAN}Running database migrations...${NC}"
+npx prisma migrate dev --name init
 
-# Create seed data
-create_seed_data() {
-    print_status "Creating seed data..."
+echo -e "${CYAN}Seeding database...${NC}"
+npm run seed
 
-    cd backend/api-gateway
-    npm run seed
-    cd ../../
+cd ../..
 
-    print_success "Seed data created"
-}
-
-# Main setup function
-main() {
-    print_status "Starting setup process..."
-
-    # Check prerequisites
-    check_docker
-    check_node
-    check_python
-
-    # Setup environment files
-    setup_env_files
-
-    # Install dependencies
-    install_dependencies
-
-    # Setup database
-    setup_database
-
-    # Create seed data
-    create_seed_data
-
-    print_success "Setup completed successfully!"
-    echo ""
-    echo "Next steps:"
-    echo "1. Update environment files with your actual configuration"
-    echo "2. Start the development environment: docker-compose -f docker-compose.dev.yml up"
-    echo "3. Access the application:"
-    echo "   - Frontend: http://localhost:3001"
-    echo "   - API Gateway: http://localhost:3000"
-    echo "   - Health Check: http://localhost:3000/health"
-    echo ""
-    echo "Happy coding! 🚀"
-}
-
-# Run main function
-main "$@"
+echo -e "\n${GREEN}Setup completed successfully!${NC}"
+echo -e "${GREEN}================================================================"
+echo -e "${YELLOW}Next steps:${NC}"
+echo -e "${WHITE}1. Start the development servers: npm run dev:all${NC}"
+echo -e "${WHITE}2. Access the frontend at: http://localhost:3001${NC}"
+echo -e "${WHITE}3. API Gateway will be available at: http://localhost:3000${NC}"
+echo -e "${WHITE}4. Check the documentation in the docs/ folder${NC}"
+echo -e "\n${GREEN}Happy coding!${NC}"

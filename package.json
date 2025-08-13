@@ -19,6 +19,7 @@
     "lint:frontend": "cd frontend && npm run lint",
     "install:all": "npm install && cd backend/api-gateway && npm install && cd ../../frontend && npm install",
     "setup": "powershell -ExecutionPolicy Bypass -File scripts/setup.ps1",
+    "setup:bash": "chmod +x scripts/setup.sh && ./scripts/setup.sh",
     "db:migrate": "cd backend/api-gateway && npm run migrate",
     "db:seed": "cd backend/api-gateway && npm run seed",
     "db:studio": "cd backend/api-gateway && npm run studio",

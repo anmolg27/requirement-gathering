@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14+-000000.svg)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org/)
 
 A comprehensive AI-powered platform that transforms how businesses collect, analyze, and manage client requirements through intelligent document processing, meeting transcription, and context-aware AI analysis.
@@ -15,15 +15,16 @@ A comprehensive AI-powered platform that transforms how businesses collect, anal
 - **🔍 Semantic Search**: Vector-based search across all documents and meetings
 - **📊 Intelligent Reporting**: Automated report generation with insights and analytics
 - **🔐 Enterprise Security**: Role-based access, encryption, and GDPR compliance
-- **📱 Modern UI**: Responsive React interface with Material-UI components
+- **📱 Modern UI**: Responsive Next.js interface with Material-UI components and dark mode
 
 ## 📋 Table of Contents
 
 - [Quick Start](#quick-start)
+- [Requirements](#requirements)
+- [Installation](#installation)
 - [Documentation](#documentation)
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
-- [Installation](#installation)
 - [Usage](#usage)
 - [API Reference](#api-reference)
 - [Contributing](#contributing)
@@ -32,27 +33,193 @@ A comprehensive AI-powered platform that transforms how businesses collect, anal
 ## 🏃‍♂️ Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.9+
-- Docker & Docker Compose
-- Git
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** 18+ ([Download](https://nodejs.org/))
+- **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop/))
+- **Git** ([Download](https://git-scm.com/))
+- **PowerShell** (Windows) or **Bash** (macOS/Linux)
 
 ### Quick Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repository-url>
+   cd requirement-gathering-app
+   ```
+
+2. **Run the setup script**
+   ```bash
+   # Windows (PowerShell)
+   npm run setup
+   
+   # macOS/Linux (Bash)
+   npm run setup:bash
+   ```
+
+3. **Start the development environment**
+   ```bash
+   # Start all services
+   npm run dev:all
+   ```
+
+4. **Access the application**
+   - **Frontend**: http://localhost:3001
+   - **API Gateway**: http://localhost:3000
+   - **Database**: localhost:5432 (PostgreSQL)
+   - **Cache**: localhost:6379 (Redis)
+
+### Manual Setup (Alternative)
+
+If you prefer to set up manually:
+
 ```bash
-# Clone the repository
-git clone <your-repository-url>
-cd requirement-gathering-app
+# 1. Install dependencies
+npm run install:all
 
-# Start the development environment
-docker-compose up -d
+# 2. Start Docker services
+docker-compose -f docker-compose.dev.yml up -d
+
+# 3. Set up database
+cd backend/api-gateway
+npm run migrate
+npm run seed
+
+# 4. Start development servers
 npm run dev:all
-
-# Access the application
-# Frontend: http://localhost:3001
-# API Gateway: http://localhost:3000
 ```
 
-For detailed setup instructions, see [Getting Started Guide](getting-started.md).
+## 📋 Requirements
+
+### System Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **RAM** | 8 GB | 16 GB |
+| **Storage** | 10 GB | 20 GB |
+| **CPU** | 2 cores | 4+ cores |
+| **OS** | Windows 10, macOS 10.15+, Ubuntu 20.04+ | Latest stable |
+
+### Software Requirements
+
+| Software | Version | Purpose |
+|----------|---------|---------|
+| **Node.js** | 18.x or higher | JavaScript runtime |
+| **Docker Desktop** | 4.x or higher | Containerization |
+| **Git** | 2.x or higher | Version control |
+| **PowerShell** (Windows) | 5.x or higher | Script execution |
+| **Bash** (macOS/Linux) | 3.x or higher | Script execution |
+
+### Environment Variables
+
+The following environment variables need to be configured:
+
+#### Backend (.env)
+```env
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/reqgather"
+REDIS_URL="redis://localhost:6379"
+
+# JWT
+JWT_SECRET="your-jwt-secret"
+JWT_REFRESH_SECRET="your-refresh-secret"
+
+# Email (Optional)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+
+# AI Services (Optional for basic setup)
+OPENAI_API_KEY="your-openai-key"
+ANTHROPIC_API_KEY="your-anthropic-key"
+GOOGLE_AI_API_KEY="your-google-key"
+```
+
+#### Frontend (.env.local)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME="ReqGather"
+```
+
+## 🚀 Installation
+
+### Step-by-Step Setup
+
+1. **Verify Prerequisites**
+   ```bash
+   # Check Node.js version
+   node --version  # Should be 18.x or higher
+   
+   # Check Docker
+   docker --version
+   docker-compose --version
+   
+   # Check Git
+   git --version
+   ```
+
+2. **Clone and Setup**
+   ```bash
+   # Clone repository
+   git clone <your-repository-url>
+   cd requirement-gathering-app
+   
+   # Run automated setup
+   npm run setup
+   ```
+
+3. **Verify Installation**
+   ```bash
+   # Check if all services are running
+   docker ps
+   
+   # Test API connection
+   curl http://localhost:3000/health
+   
+   # Access frontend
+   # Open http://localhost:3001 in your browser
+   ```
+
+### Troubleshooting
+
+#### Common Issues
+
+**Port Already in Use**
+```bash
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# macOS/Linux
+lsof -ti:3000 | xargs kill -9
+```
+
+**Docker Issues**
+```bash
+# Restart Docker Desktop
+# Then run:
+docker system prune -a
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+**Database Connection Issues**
+```bash
+# Check if PostgreSQL is running
+docker logs postgres
+
+# Reset database
+docker-compose -f docker-compose.dev.yml down -v
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+**Node Modules Issues**
+```bash
+# Clear node modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
 
 ## 📚 Documentation
 
@@ -85,12 +252,24 @@ requirement-gathering-app/
 ├── 📅 sprint-doc.md                # Sprint planning and timeline
 ├── 🔧 working.md                   # How the system works
 ├── 🚀 getting-started.md           # Setup and installation guide
-├── frontend/                       # React frontend application
+├── frontend/                       # Next.js frontend application
+│   ├── src/
+│   │   ├── app/                   # Next.js App Router
+│   │   ├── components/            # React components
+│   │   ├── contexts/              # React contexts
+│   │   └── lib/                   # Utility functions
+│   ├── package.json
+│   └── next.config.js
 ├── backend/                        # Microservices backend
 │   ├── api-gateway/               # Main API gateway
+│   │   ├── src/
+│   │   ├── prisma/                # Database schema
+│   │   └── package.json
 │   └── services/                  # Individual microservices
-├── docker/                        # Docker configurations
+├── docker-compose.dev.yml         # Development Docker setup
 ├── scripts/                       # Development and deployment scripts
+│   ├── setup.ps1                  # Windows setup script
+│   └── setup.sh                   # Unix setup script
 └── docs/                          # Additional documentation
 ```
 
@@ -102,7 +281,7 @@ The platform follows a microservices architecture with the following key compone
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │────│   API Gateway   │────│   Microservices │
-│   (React)       │    │   (Node.js)     │    │   (Node.js/Python)
+│   (Next.js)     │    │   (Node.js)     │    │   (Node.js/Python)
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                │
                        ┌─────────────────┐
@@ -127,16 +306,19 @@ For detailed architecture information, see [System Design Document](system-desig
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework**: React 18 with TypeScript
-- **UI Library**: Material-UI (MUI) v5
-- **State Management**: Redux Toolkit + RTK Query
-- **File Upload**: react-dropzone
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **UI Library**: Material-UI (MUI) v5 with dark mode
+- **State Management**: React Context + Hooks
+- **Styling**: Tailwind CSS + MUI System
+- **Forms**: React Hook Form + Zod validation
+- **HTTP Client**: Axios
 - **Real-time**: Socket.io-client
 
 ### Backend
 - **API Gateway**: Node.js + Express.js + TypeScript
 - **Microservices**: Python FastAPI + Node.js
-- **Authentication**: JWT + Passport.js
+- **Authentication**: JWT + bcryptjs
 - **Database**: PostgreSQL 15 + Prisma ORM
 - **Vector Database**: Pinecone
 - **Cache**: Redis 7
@@ -153,52 +335,6 @@ For detailed architecture information, see [System Design Document](system-desig
 - **CI/CD**: GitHub Actions
 - **Monitoring**: Prometheus + Grafana
 - **Logging**: ELK Stack
-
-## 🚀 Installation
-
-### Development Environment
-
-1. **Clone the repository**
-   ```bash
-   git clone <your-repository-url>
-   cd requirement-gathering-app
-   ```
-
-2. **Set up environment variables**
-   ```bash
-   # Copy environment templates
-   cp backend/api-gateway/.env.example backend/api-gateway/.env
-   cp backend/services/document-service/.env.example backend/services/document-service/.env
-   cp backend/services/ai-service/.env.example backend/services/ai-service/.env
-   cp frontend/.env.example frontend/.env
-   ```
-
-3. **Start the development environment**
-   ```bash
-   # Start databases
-   docker-compose -f docker-compose.dev.yml up -d
-   
-   # Install dependencies
-   npm run install:all
-   
-   # Start all services
-   npm run dev:all
-   ```
-
-For detailed installation instructions, see [Getting Started Guide](getting-started.md).
-
-### Production Deployment
-
-```bash
-# Build production images
-docker-compose -f docker-compose.prod.yml build
-
-# Deploy to production
-docker-compose -f docker-compose.prod.yml up -d
-
-# Run migrations
-docker-compose exec api-gateway npm run migrate
-```
 
 ## 📖 Usage
 
@@ -271,22 +407,29 @@ For complete API documentation, see `docs/api/` directory.
 
 ### Run Tests
 ```bash
-# Frontend tests
-cd frontend && npm test
+# Run all tests (frontend + backend)
+npm test
 
-# Backend tests
-cd backend/api-gateway && npm test
-cd backend/services/meeting-service && npm test
+# Run frontend tests only
+npm run test:frontend
 
-# Python service tests
-cd backend/services/document-service && pytest
-cd backend/services/ai-service && pytest
+# Run backend tests only
+npm run test:api
+
+# Run tests with coverage
+cd frontend && npm run test:coverage
+cd backend/api-gateway && npm run test:coverage
 ```
 
-### Test Coverage
-- Unit tests: 90%+ coverage target
-- Integration tests: API endpoint testing
-- End-to-end tests: Critical user flows
+### Test Setup
+- **Frontend**: Jest + React Testing Library for component testing
+- **Backend**: Jest + Supertest for API endpoint testing
+- **Coverage**: Built-in coverage reporting for both frontend and backend
+
+### Writing Tests
+- Frontend tests: `frontend/src/__tests__/`
+- Backend tests: `backend/api-gateway/src/__tests__/`
+- Example test files are provided to get started
 
 ## 📈 Development Roadmap
 
@@ -322,9 +465,9 @@ We welcome contributions! Please see our contributing guidelines:
 
 ### Development Guidelines
 - Follow the existing code style and conventions
-- Write tests for new features
+- Write tests for new features (see [Testing](#-testing) section)
 - Update documentation as needed
-- Ensure all tests pass before submitting
+- Ensure all tests pass before submitting (`npm test`)
 
 ## 📄 License
 

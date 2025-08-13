@@ -1,0 +1,53 @@
+{
+  "name": "requirement-gathering-app",
+  "version": "1.0.0",
+  "description": "AI-Powered Requirements Gathering Platform",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
+    "dev:all": "docker-compose -f docker-compose.dev.yml up",
+    "dev:api": "cd backend/api-gateway && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:api && npm run build:frontend",
+    "build:api": "cd backend/api-gateway && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "npm run test:api && npm run test:frontend",
+    "test:api": "cd backend/api-gateway && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "lint": "npm run lint:api && npm run lint:frontend",
+    "lint:api": "cd backend/api-gateway && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "install:all": "npm install && cd backend/api-gateway && npm install && cd ../../frontend && npm install",
+    "setup": "powershell -ExecutionPolicy Bypass -File scripts/setup.ps1",
+    "db:migrate": "cd backend/api-gateway && npm run migrate",
+    "db:seed": "cd backend/api-gateway && npm run seed",
+    "db:studio": "cd backend/api-gateway && npm run studio",
+    "clean": "rm -rf node_modules backend/api-gateway/node_modules frontend/node_modules",
+    "docker:build": "docker-compose -f docker-compose.dev.yml build",
+    "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "docker:clean": "docker-compose -f docker-compose.dev.yml down -v --remove-orphans"
+  },
+  "keywords": [
+    "requirements",
+    "gathering",
+    "ai",
+    "document-processing",
+    "meeting-transcription",
+    "project-management"
+  ],
+  "author": "Your Company",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "workspaces": [
+    "backend/api-gateway",
+    "frontend"
+  ]
+}
